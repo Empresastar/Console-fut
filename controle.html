@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CONTROLE PERSONALIZADO</title>
+    <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <style>
+        :root { --main-col: #333; --btn-col: #fff; }
+        body { background: #111; color: #fff; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; touch-action: none; }
+        .pad { display: grid; grid-template-columns: repeat(3, 1fr); width: 220px; margin: 20px auto; gap: 10px; }
+        .btn { background: var(--main-col); height: 70px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 25px; border-bottom: 4px solid #000; }
+        .action { width: 85%; height: 60px; margin: 10px auto; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #dc3545; }
+        
+        /* Menu de Personalização */
+        #config-panel { position: absolute; bottom: 0; width: 100%; background: #222; padding: 20px; border-top: 2px solid #00ff00; transform: translateY(100%); transition: 0.3s; box-sizing: border-box; }
+        #config-panel.open { transform: translateY(0); }
+        .dot { height: 30px; width: 30px; border-radius: 50%; display: inline-block; margin: 5px; border: 2px solid #fff; }
+    </style>
+</head>
+<body>
+    <div style="padding: 10px; display: flex; justify-content: space-between;">
+        <span id="status">🔴 OFFLINE</span>
+        <span onclick="toggleMenu()">⚙️ AJUSTES</span>
+    </div>
+
+    <div class="pad" id="joystick">
+        <div></div> <div class="btn" ontouchstart="send('U')">↑</div> <div></div>
+        <div class="btn" ontouchstart="send('L')">←</div> <div></div> <div class="btn" ontouchstart="send('R')">→</div>
+        <div></div> <div class="btn" ontouchstart="send('D')">↓</div> <div></div>
+    </div>
+
+    <div class="action" style="background: #28a745;" ontouchstart="send('P')">PASSE</div>
+    <div class="action" ontouchstart="send('S')">CHUTE</div>
+
+    <div id="config-panel">
+        <h4>Personalizar Controle</h4>
+        <div class="dot" style="background: #333;" onclick="setTheme('#333')"></div>
+        <div class="dot" style="background: #1a5e20;" onclick="setTheme('#1a5e20')"></div>
+        <div class="dot" style="background: #0d47a1;" onclick="setTheme('#0d47a1')"></div>
+        <br><br>
+        <button onclick="toggleMenu()">FECHAR</button>
+    </div>
+
+    <script>
+        const peer = new Peer();
+        let conn;
+        peer.on('open', () => {
+            conn = peer.connect("GOLAZO_2026");
+            conn.on('open', () => document.getElementById('status').innerText = "🟢 CONECTADO");
+        });
+
+        function send(m) { if(conn) conn.send(m); if(navigator.vibrate) navigator.vibrate(30); }
+        function toggleMenu() { document.getElementById('config-panel').classList.toggle('open'); }
+        function setTheme(col) { document.documentElement.style.setProperty('--main-col', col); }
+    </script>
+</body>
+</html>

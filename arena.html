@@ -2,56 +2,127 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>GOLAZO 2026 - ARENA TV</title>
+    <title>GOLAZO 2026 - ARENA PRO</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
-    <style>body { margin: 0; overflow: hidden; background: #000; }</style>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; }
+        #hud { position: absolute; top: 20px; width: 100%; text-align: center; color: white; font-size: 40px; text-shadow: 3px 3px #000; pointer-events: none; }
+    </style>
 </head>
 <body>
-    <div id="ui" style="position: absolute; color: white; width: 100%; text-align: center; top: 20px; font-family: Arial; font-size: 30px;">
-        ID DA SALA: <span style="color: #00ff00;">GOLAZO_2026</span>
-    </div>
+    <div id="hud">BRASIL <span id="p1-score">0</span> - <span id="cpu-score">0</span> IA</div>
+
     <script>
-        // Configuração Básica do Jogo 3D
+        // --- CONFIGURAÇÃO DO MUNDO FÍSICO ---
+        const world = new CANNON.World();
+        world.gravity.set(0, -9.82, 0);
+
+        // --- CENA 3D ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 
-        // Luz e Campo
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-        const grass = new THREE.Mesh(new THREE.PlaneGeometry(100, 60), new THREE.MeshPhongMaterial({color: 0x228b22}));
-        grass.rotation.x = -Math.PI / 2;
-        scene.add(grass);
+        // --- MATERIAIS ---
+        const groundMat = new THREE.MeshPhongMaterial({ color: 0x2e7d32 });
+        const p1Mat = new THREE.MeshPhongMaterial({ color: 0xffee00 }); // Amarelo Brasil
+        const aiMat = new THREE.MeshPhongMaterial({ color: 0xffffff }); // Branco IA
+        const ballMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
 
-        // A Bola
-        const ballGeo = new THREE.SphereGeometry(1, 32, 32);
-        const ballMat = new THREE.MeshPhongMaterial({color: 0xffffff});
-        const ball = new THREE.Mesh(ballGeo, ballMat);
-        ball.position.y = 1;
-        scene.add(ball);
+        // --- O CAMPO ---
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 40), groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
+        groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0), -Math.PI/2);
+        world.addBody(groundBody);
 
-        camera.position.set(0, 30, 40);
+        // --- O GOL (Traves) ---
+        function criarGol(x) {
+            const g = new THREE.Mesh(new THREE.BoxGeometry(1, 5, 10), new THREE.MeshPhongMaterial({color: 0xffffff, wireframe: true}));
+            g.position.set(x, 2.5, 0);
+            scene.add(g);
+        }
+        criarGol(-30); // Gol Esquerdo
+        criarGol(30);  // Gol Direito
+
+        // --- JOGADOR 1 (P1) ---
+        const p1Body = new CANNON.Body({ mass: 1, shape: new CANNON.Box(new CANNON.Vec3(1, 1, 1)) });
+        p1Body.position.set(-15, 1, 0);
+        world.addBody(p1Body);
+        const p1Mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), p1Mat);
+        scene.add(p1Mesh);
+
+        // --- INIMIGO (IA) ---
+        const aiBody = new CANNON.Body({ mass: 1, shape: new CANNON.Box(new CANNON.Vec3(1, 1, 1)) });
+        aiBody.position.set(15, 1, 0);
+        world.addBody(aiBody);
+        const aiMesh = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), aiMat);
+        scene.add(aiMesh);
+
+        // --- A BOLA ---
+        const ballBody = new CANNON.Body({ mass: 0.5, shape: new CANNON.Sphere(0.8) });
+        ballBody.position.set(0, 5, 0);
+        world.addBody(ballBody);
+        const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), ballMat);
+        scene.add(ballMesh);
+
+        camera.position.set(0, 35, 30);
         camera.lookAt(0,0,0);
 
-        // Conexão com o Controle
+        // --- SISTEMA DE PLACAR ---
+        let s1 = 0, s2 = 0;
+        function checkGoal() {
+            if(ballBody.position.x < -30) { s2++; resetBall(); }
+            if(ballBody.position.x > 30) { s1++; resetBall(); }
+            document.getElementById('p1-score').innerText = s1;
+            document.getElementById('cpu-score').innerText = s2;
+        }
+        function resetBall() {
+            ballBody.position.set(0, 5, 0);
+            ballBody.velocity.set(0,0,0);
+        }
+
+        // --- CONEXÃO COM O CONTROLE (PeerJS) ---
         const peer = new Peer("GOLAZO_2026");
         peer.on('connection', conn => {
-            conn.on('data', data => {
-                if(data === 'U') ball.position.z -= 1;
-                if(data === 'D') ball.position.z += 1;
-                if(data === 'L') ball.position.x -= 1;
-                if(data === 'R') ball.position.x += 1;
+            conn.on('data', d => {
+                const force = 15;
+                if(d === 'U') p1Body.velocity.z = -force;
+                if(d === 'D') p1Body.velocity.z = force;
+                if(d === 'L') p1Body.velocity.x = -force;
+                if(d === 'R') p1Body.velocity.x = force;
+                if(d === 'S') { // Chute (se estiver perto da bola)
+                    if(p1Body.position.distanceTo(ballBody.position) < 3) {
+                        ballBody.velocity.set(40, 5, 0);
+                    }
+                }
             });
         });
 
-        function animate() {
-            requestAnimationFrame(animate);
+        // --- LÓGICA DO JOGO (LOOP) ---
+        function update() {
+            world.step(1/60);
+            
+            // Sincronizar Física com Gráfico
+            p1Mesh.position.copy(p1Body.position);
+            aiMesh.position.copy(aiBody.position);
+            ballMesh.position.copy(ballBody.position);
+
+            // INTELIGÊNCIA ARTIFICIAL SIMPLES (Segue a bola)
+            if(aiBody.position.z < ballBody.position.z) aiBody.velocity.z = 8;
+            else aiBody.velocity.z = -8;
+            if(aiBody.position.x > ballBody.position.x + 5) aiBody.velocity.x = -8;
+
+            checkGoal();
             renderer.render(scene, camera);
+            requestAnimationFrame(update);
         }
-        animate();
+        update();
     </script>
 </body>
 </html>

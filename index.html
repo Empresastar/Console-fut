@@ -5,33 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GOLAZO 2026 - PORTAL</title>
     <style>
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; }
-        .card { background: #111; padding: 40px; border-radius: 30px; border: 2px solid #333; width: 85%; max-width: 400px; }
-        h1 { color: #00ff00; margin-bottom: 20px; }
-        .btn { display: block; padding: 20px; margin: 15px auto; border-radius: 15px; text-decoration: none; font-weight: bold; color: #000; transition: 0.3s; }
-        .tv-mode { background: #fff; }
-        .cell-mode { background: #00ccff; }
+        body { margin: 0; background: #050505; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+        .menu { background: #111; padding: 30px; border-radius: 20px; border: 2px solid #333; width: 90%; max-width: 400px; }
+        h1 { color: #00ff00; }
+        .btn { display: block; padding: 20px; margin: 15px auto; border-radius: 12px; text-decoration: none; font-weight: bold; color: black; transition: 0.3s; }
+        .host { background: #fff; } .client { background: #00ccff; }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="menu">
         <h1>GOLAZO 2026</h1>
-        <div id="options">
-            <p>Detectando dispositivo...</p>
-        </div>
+        <p>COMO DESEJA USAR ESTE APARELHO?</p>
+        <a href="arena.html" class="btn host">📺 SER A TELA (TV/PC)</a>
+        <a href="controle.html" class="btn client">🎮 SER O CONTROLE (CELULAR)</a>
+        <a href="treino.html" style="color: #666; text-decoration: none;">Treinar Sozinho</a>
     </div>
-    <script>
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const options = document.getElementById('options');
-        
-        if (isMobile) {
-            options.innerHTML = `
-                <a href="mobile_game.html" class="btn tv-mode">⚽ JOGAR NESTA TELA</a>
-                <a href="controle.html" class="btn cell-mode">🎮 SER CONTROLE (P/ TV)</a>
-            `;
-        } else {
-            window.location.href = "arena.html";
-        }
-    </script>
 </body>
 </html>
+

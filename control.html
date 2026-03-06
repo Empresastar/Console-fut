@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-800 h-screen flex flex-col items-center justify-center touch-none">
+    <input id="pin-input" type="number" placeholder="PIN" class="p-4 rounded mb-4 text-black text-center">
+    <button onclick="conectar()" class="bg-green-500 p-4 rounded font-bold mb-10">CONECTAR</button>
+
+    <div class="grid grid-cols-3 gap-4">
+        <div></div><button ontouchstart="send('up')" class="bg-slate-600 w-20 h-20 rounded">UP</button><div></div>
+        <button ontouchstart="send('left')" class="bg-slate-600 w-20 h-20 rounded">LEFT</button>
+        <button ontouchstart="send('down')" class="bg-slate-600 w-20 h-20 rounded">DOWN</button>
+        <button ontouchstart="send('right')" class="bg-slate-600 w-20 h-20 rounded">RIGHT</button>
+    </div>
+
+    <script>
+        const socket = io('https://seu-servidor-aqui.onrender.com');
+        function conectar() {
+            const pin = document.getElementById('pin-input').value;
+            socket.emit('join-room', pin);
+        }
+        function send(dir) {
+            const pin = document.getElementById('pin-input').value;
+            socket.emit('move', { pin, dir });
+        }
+    </script>
+</body>
+</html>

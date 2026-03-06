@@ -1,30 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AirConsole Clone - TV</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <title>AirConsole Clone</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-white flex flex-col items-center justify-center h-screen overflow-hidden">
-    <h1 class="text-2xl mb-4">Código da Sala: <span id="pin" class="text-yellow-400 font-bold">Gerando...</span></h1>
-    <div id="player" class="w-16 h-16 bg-blue-500 rounded-lg absolute transition-all duration-100" style="top:50%; left:50%;"></div>
+<body class="bg-slate-900 text-white overflow-hidden">
+
+    <div id="screen-view" class="hidden h-screen flex flex-col items-center justify-center">
+        <h1 class="text-3xl mb-4">Código da Sala: <span id="pin" class="text-yellow-400 font-black text-6xl">....</span></h1>
+        <div id="player" class="w-16 h-16 bg-blue-500 rounded-lg absolute transition-all" style="top:50%; left:50%;"></div>
+    </div>
+
+    <div id="controller-view" class="hidden h-screen flex flex-col items-center justify-center p-5">
+        <input id="pin-input" type="number" placeholder="DIGITE O PIN" class="p-4 rounded mb-4 text-black text-3xl text-center w-full">
+        <button onclick="conectar()" class="bg-green-500 w-full p-6 rounded-xl font-bold text-2xl shadow-lg">CONECTAR NO PC</button>
+        
+        <div class="grid grid-cols-3 gap-4 mt-12">
+            <div></div><button ontouchstart="send('up')" class="bg-slate-700 w-24 h-24 rounded-full active:bg-yellow-500">⬆️</button><div></div>
+            <button ontouchstart="send('left')" class="bg-slate-700 w-24 h-24 rounded-full active:bg-yellow-500">⬅️</button>
+            <button ontouchstart="send('down')" class="bg-slate-700 w-24 h-24 rounded-full active:bg-yellow-500">⬇️</button>
+            <button ontouchstart="send('right')" class="bg-slate-700 w-24 h-24 rounded-full active:bg-yellow-500">➡️</button>
+        </div>
+    </div>
 
     <script>
-        const socket = io('https://seu-servidor-aqui.onrender.com'); // Vamos criar isso no passo 2
-        const player = document.getElementById('player');
-        let pos = { x: 50, y: 50 };
+        // LÓGICA DE DECISÃO
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const socket = io('https://SEU-LINK-DO-RENDER.onrender.com');
+        let playerPos = { x: 50, y: 50 };
 
-        socket.emit('create-room');
-        socket.on('room-ready', pin => document.getElementById('pin').innerText = pin);
+        if (!isMobile) {
+            // Se for PC, mostra a TV
+            document.getElementById('screen-view').classList.remove('hidden');
+            socket.emit('create-room');
+            socket.on('room-ready', pin => document.getElementById('pin').innerText = pin);
+            
+            socket.on('game-command', dir => {
+                if(dir === 'up') playerPos.y -= 5;
+                if(dir === 'down') playerPos.y += 5;
+                if(dir === 'left') playerPos.x -= 5;
+                if(dir === 'right') playerPos.x += 5;
+                const p = document.getElementById('player');
+                p.style.top = playerPos.y + '%';
+                p.style.left = playerPos.x + '%';
+            });
+        } else {
+            // Se for CELULAR, mostra o controle
+            document.getElementById('controller-view').classList.remove('hidden');
+        }
 
-        socket.on('game-command', cmd => {
-            if(cmd === 'left') pos.x -= 5;
-            if(cmd === 'right') pos.x += 5;
-            if(cmd === 'up') pos.y -= 5;
-            if(cmd === 'down') pos.y += 5;
-            player.style.left = pos.x + '%';
-            player.style.top = pos.y + '%';
-        });
+        function conectar() {
+            const pin = document.getElementById('pin-input').value;
+            socket.emit('join-room', pin);
+            alert("Conectado! Use as setas.");
+        }
+
+        function send(dir) {
+            const pin = document.getElementById('pin-input').value;
+            socket.emit('move', { pin, dir });
+        }
     </script>
 </body>
 </html>

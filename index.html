@@ -1,25 +1,30 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOLAZO 2026 - PORTAL</title>
-    <style>
-        body { margin: 0; background: #050505; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; }
-        .menu { background: #111; padding: 30px; border-radius: 20px; border: 2px solid #333; width: 90%; max-width: 400px; }
-        h1 { color: #00ff00; }
-        .btn { display: block; padding: 20px; margin: 15px auto; border-radius: 12px; text-decoration: none; font-weight: bold; color: black; transition: 0.3s; }
-        .host { background: #fff; } .client { background: #00ccff; }
-    </style>
+    <title>AirConsole Clone - TV</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="menu">
-        <h1>GOLAZO 2026</h1>
-        <p>COMO DESEJA USAR ESTE APARELHO?</p>
-        <a href="arena.html" class="btn host">📺 SER A TELA (TV/PC)</a>
-        <a href="controle.html" class="btn client">🎮 SER O CONTROLE (CELULAR)</a>
-        <a href="treino.html" style="color: #666; text-decoration: none;">Treinar Sozinho</a>
-    </div>
+<body class="bg-slate-900 text-white flex flex-col items-center justify-center h-screen overflow-hidden">
+    <h1 class="text-2xl mb-4">Código da Sala: <span id="pin" class="text-yellow-400 font-bold">Gerando...</span></h1>
+    <div id="player" class="w-16 h-16 bg-blue-500 rounded-lg absolute transition-all duration-100" style="top:50%; left:50%;"></div>
+
+    <script>
+        const socket = io('https://seu-servidor-aqui.onrender.com'); // Vamos criar isso no passo 2
+        const player = document.getElementById('player');
+        let pos = { x: 50, y: 50 };
+
+        socket.emit('create-room');
+        socket.on('room-ready', pin => document.getElementById('pin').innerText = pin);
+
+        socket.on('game-command', cmd => {
+            if(cmd === 'left') pos.x -= 5;
+            if(cmd === 'right') pos.x += 5;
+            if(cmd === 'up') pos.y -= 5;
+            if(cmd === 'down') pos.y += 5;
+            player.style.left = pos.x + '%';
+            player.style.top = pos.y + '%';
+        });
+    </script>
 </body>
 </html>
-
